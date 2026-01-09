@@ -18,13 +18,3 @@ __pycache__/
 # Exclude OS files
 .DS_Store
 Thumbs.db
-
-# Exclude data folders (keep structure, exclude data)
-STOCKS/
-ETFs/
-SECTORS/
-
-# But keep the folder structure visible
-!STOCKS/.gitkeep
-!ETFs/.gitkeep
-!SECTORS/.gitkeep
