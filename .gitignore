@@ -1,0 +1,30 @@
+# Exclude CSV data files (too large/numerous for Git)
+*.csv
+
+# Exclude Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Exclude Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Exclude IDE settings
+.vscode/
+.idea/
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
+
+# Exclude data folders (keep structure, exclude data)
+STOCKS/
+ETFs/
+SECTORS/
+
+# But keep the folder structure visible
+!STOCKS/.gitkeep
+!ETFs/.gitkeep
+!SECTORS/.gitkeep
