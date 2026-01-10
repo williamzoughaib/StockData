@@ -4,8 +4,15 @@ import sector
 import sector_processing
 
 def main():
-    print("\n" + "=" * 60)
-    print("Complete!")
+    
+    tradeable.main()
+
+    tradeable_processing.main()
+
+    sector.main()
+
+    sector_processing.main()
+
 if __name__ == "__main__":
     main()
 
