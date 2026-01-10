@@ -82,6 +82,8 @@ Each CSV file contains OHLCV data:
 - Close
 - Volume
 
+Both processing scripts add daily return and log volume to all .csv files for later graphical analysis. 
+
 #### Time Windows
 
 - **1yr**: 252 trading days (approximately 1 calendar year)
