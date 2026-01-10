@@ -1,21 +1,5 @@
-"""
-Organize stocks into sector folders using SEC SIC codes.
-Copies existing CSV files from STOCKS folders into sector-specific folders.
-
-Structure:
-SECTORS/
-  Healthcare/
-    1yr/
-    5yr/
-    10yr/
-    alltime/
-  Energy/
-    1yr/
-    ...
-
-NOTE: First run will take ~1 hour to download comprehensive SEC dataset.
-Subsequent runs will be fast (~1-2 minutes) using cached data.
-"""
+# Organize stocks into sector folders using SEC SIC codes. 
+## Uses edgartools and transposes to new Sectors folder structure.
 
 import os
 import shutil
@@ -23,10 +7,10 @@ from pathlib import Path
 from edgar import set_identity
 from edgar.reference.company_subsets import CompanySubset
 
-# Set Edgar identity
+## Set your email for SEC EDGAR access
 set_identity("williamzoughaib@gmail.com")
 
-# Define all 11 GICS sectors with their SIC code mappings
+## Define all 11 GICS sectors with their SIC code mappings
 SECTORS = {
     'Healthcare': [(2830, 2839), (3840, 3849), (8000, 8099)],
     'Energy': [(1200, 1299), (1300, 1399), (2900, 2999)],
@@ -40,20 +24,17 @@ SECTORS = {
     'Utilities': [(4900, 4999)],
     'Real_Estate': [(6500, 6599)],
 }
-
-# Timeframe folders to copy
+## Timeframe folders to copy
 TIMEFRAMES = ['1yr', '5yr', '10yr', 'alltime']
 
-
 def get_sector_companies(sector_name, sic_ranges):
-    """Get all companies for a given sector using SIC code ranges."""
     print(f"\nFetching companies for {sector_name} sector...")
 
-    # Start with first range
+    ### Start with first range
     first_range = sic_ranges[0]
     companies = CompanySubset(use_comprehensive=True).from_industry(sic_range=first_range)
 
-    # Combine with remaining ranges
+    #### Combine with remaining ranges
     for sic_range in sic_ranges[1:]:
         companies = companies.combine_with(
             CompanySubset(use_comprehensive=True).from_industry(sic_range=sic_range)
@@ -65,22 +46,22 @@ def get_sector_companies(sector_name, sic_ranges):
 
 
 def copy_sector_files(sector_name, companies_df):
-    """Copy existing stock CSV files from STOCKS folders to sector folders."""
-    # Get list of tickers
+
+    ### Get list of tickers
     tickers = companies_df['ticker'].dropna().tolist()
     tickers_set = set(tickers)  # For faster lookup
 
-    # Create sector folder structure
+    ### Create sector folder structure
     sector_base = os.path.join('SECTORS', sector_name)
     for timeframe in TIMEFRAMES:
         os.makedirs(os.path.join(sector_base, timeframe), exist_ok=True)
 
-    # Track statistics
+    ### Track statistics
     stats = {tf: {'found': 0, 'copied': 0} for tf in TIMEFRAMES}
 
     print(f"\nCopying files for {len(tickers)} companies in {sector_name}...")
 
-    # Process each timeframe
+    ### Process each timeframe
     for timeframe in TIMEFRAMES:
         source_folder = os.path.join('STOCKS', timeframe)
         dest_folder = os.path.join(sector_base, timeframe)
@@ -89,7 +70,7 @@ def copy_sector_files(sector_name, companies_df):
             print(f"  {timeframe}: Source folder not found, skipping")
             continue
 
-        # Get all CSV files in source folder
+        ### Get all CSV files in source folder
         csv_files = list(Path(source_folder).glob("*.csv"))
 
         for csv_file in csv_files:
@@ -111,15 +92,12 @@ def copy_sector_files(sector_name, companies_df):
 
 
 def main():
-    """Main execution function."""
     print("=" * 70)
     print("SEC GICS Sector Data Organization")
     print("=" * 70)
-    print("\nNOTE: First run will download comprehensive SEC dataset (~30-60 min)")
-    print("      Subsequent runs will be fast using cached data\n")
     print("Copying existing data from STOCKS folders to SECTORS folders...")
 
-    # Create main SECTORS folder
+    #### Create main SECTORS folder
     os.makedirs('SECTORS', exist_ok=True)
 
     results = {}
@@ -133,7 +111,7 @@ def main():
         else:
             results[sector_name] = {tf: {'found': 0, 'copied': 0} for tf in TIMEFRAMES}
 
-    # Summary
+# Summary
     print("\n" + "=" * 70)
     print("SUMMARY BY SECTOR")
     print("=" * 70)

@@ -20,32 +20,32 @@ FOLDERS = [
     'ETFs/alltime'
 ]
 
-### Function to add columns to a single file
+### Add Daily_Return and Log_Volume Function to add columns to a single file
 def add_columns_to_file(file_path):
-    """Add Daily_Return and Log_Volume to a single CSV file."""
+                            
     try:
-        # Read CSV, skipping the Ticker and Date rows (rows 1 and 2)
+        #### Read CSV, skipping the Ticker and Date rows (rows 1 and 2)
         df = pd.read_csv(file_path, skiprows=[1, 2])
 
-        # Set Date as index
+        #### Set Date as index
         if 'Price' in df.columns:
             df = df.set_index('Price')
             df.index.name = 'Date'
 
-        # Check if columns already exist
+        #### Check if columns already exist
         if 'Daily_Return' in df.columns and 'Log_Volume' in df.columns:
             return "already has columns"
 
-        # Add Daily_Return
+        #### Add Daily_Return
         if 'Close' in df.columns:
             df['Daily_Return'] = pd.to_numeric(df['Close'], errors='coerce').pct_change(fill_method=None)
 
-        # Add Log_Volume
+        #### Add Log_Volume
         if 'Volume' in df.columns:
             volume_numeric = pd.to_numeric(df['Volume'], errors='coerce')
             df['Log_Volume'] = np.log(volume_numeric.replace(0, np.nan))
 
-        # Save back to file
+        #### Save back to file
         df.to_csv(file_path)
 
         return "updated"

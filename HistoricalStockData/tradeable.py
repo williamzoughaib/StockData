@@ -189,8 +189,5 @@ def main():
         if process_symbol(etfs[i], 'etf', etf_end, i):
             etf_success += 1
 
-### Print summary
-print_summary(stock_success, stock_end - OFFSET, etf_success, etf_end - OFFSET)
-
 if __name__ == "__main__":
     main()
