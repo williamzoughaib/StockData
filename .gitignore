@@ -18,3 +18,18 @@ __pycache__/
 # Exclude OS files
 .DS_Store
 Thumbs.db
+*~
+
+# Exclude environment files (credentials)
+.env
+*.log
+
+# Exclude large data files
+*.parquet
+*.h5
+*.pkl
+SEC_Filings_NASDAQ/
+
+# Exclude conda environments
+envs/
+.conda/

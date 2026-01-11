@@ -1,0 +1,4 @@
+# Pip install after Condas
+yfinance>=1.0
+edgartools>=5.8
+polars>=1.37

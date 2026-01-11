@@ -3,5 +3,10 @@
         {
             "path": "."
         }
-    ]
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": "~\\anaconda3\\envs\\stockdata\\python.exe",
+        "python.terminal.activateEnvironment": true,
+        "python.terminal.activateEnvInCurrentTerminal": true
+    }
 }
