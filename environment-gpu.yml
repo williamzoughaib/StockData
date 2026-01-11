@@ -1,0 +1,35 @@
+# GPU-accelerated environment with RAPIDS for Linux only
+# Requires: Linux OS + NVIDIA GPU with CUDA 12.1+
+# For Windows or non-GPU systems, use environment.yml instead
+#
+# Install with: conda env create -f environment-gpu.yml
+name: stockdata-gpu
+channels:
+  - rapidsai
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pytorch
+  - pytorch-cuda=12.1
+  - pandas
+  - matplotlib
+  - seaborn
+  - plotly
+  - scikit-learn
+  - scipy
+  - xgboost
+  - statsmodels
+  - numpy
+  # RAPIDS libraries for GPU-accelerated data processing
+  - cudf>=24.0        # GPU DataFrame library (replaces pandas)
+  - cuml>=24.0        # GPU machine learning (replaces scikit-learn)
+  - cugraph>=24.0     # GPU graph analytics
+  - dask-cudf         # Distributed GPU DataFrames
+  - pip
+  - pip:
+    - yfinance>=1.0
+    - edgartools>=5.8
+    - polars>=1.37
