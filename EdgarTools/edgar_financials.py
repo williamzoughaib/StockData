@@ -15,7 +15,7 @@ from pathlib import Path
 set_identity("williamzoughaib@gmail.com")
 
 # Configuration
-OUTPUT_BASE_DIR = "SEC_Filings_NASDAQ"
+OUTPUT_BASE_DIR = "FinancialsFilings"
 
 
 def extract_financials_from_filing(filing):

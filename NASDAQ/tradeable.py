@@ -8,6 +8,8 @@ import numpy as np
 import yfinance as yf
 import os
 
+LISTINGS_DIR = "NASDAQ Listings"
+
 ### Configuration
 OFFSET = 0
 LIMIT = None  # Set to None to process all symbols, or a number to limit
@@ -26,28 +28,22 @@ ASSET_TYPES = {
     'etf': 'ETFs'
 }
 
-### Source URL for NASDAQ symbols and seperate stocks and ETFs
-def get_nasdaq_symbols():
-   
-    url = "http://www.nasdaqtrader.com/dynamic/SymDir/nasdaqtraded.txt"
-    data = pd.read_csv(url, sep='|')
+### Source URL for NASDAQ symbols and separate stocks and ETFs
+def get_nasdaq_symbols(stocks_file="Listings Data/SECstocks.parquet", etfs_file="Listings Data/etfs.parquet"):
+    stocks_df = pd.read_parquet(stocks_file)
+    etfs_df = pd.read_parquet(etfs_file)
 
-    ### Filter out test issues
-    data_clean = data[data['Test Issue'] == 'N']
+    stocks = stocks_df["NASDAQ Symbol"].astype(str).str.strip().dropna().tolist()
+    etfs = etfs_df["NASDAQ Symbol"].astype(str).str.strip().dropna().tolist()
 
-    ### Separate stocks and ETFs based on ETF column
-    stocks = data_clean[data_clean['ETF'] == 'N']['NASDAQ Symbol'].tolist()
-    etfs = data_clean[data_clean['ETF'] == 'Y']['NASDAQ Symbol'].tolist()
-
-    print(f'Total stocks: {len(stocks)}')
-    print(f'Total ETFs: {len(etfs)}')
-    print(f'Total symbols: {len(stocks) + len(etfs)}')
+    print(f"Total stocks: {len(stocks)}")
+    print(f"Total ETFs: {len(etfs)}")
+    print(f"Total symbols: {len(stocks) + len(etfs)}")
 
     return stocks, etfs
 
 ### Create necessary directories
 def create_directories():
-   
     for asset_folder in ASSET_TYPES.values():
         for timeframe in TIMEFRAMES.keys():
             folder_path = os.path.join(asset_folder, timeframe)
@@ -55,9 +51,12 @@ def create_directories():
                 os.makedirs(folder_path)
                 print(f"Created directory: {folder_path}")
 
+def save_both(df, parquet_path):
+    df.to_parquet(parquet_path)
+    df.to_csv(parquet_path.replace(".parquet", ".csv"))
+
 ### This script updates after reruns. Except for all-time data, it appends new data. 
 def update_rolling_windows(symbol, asset_type, data_all, data_new=None):
-    
     asset_folder = ASSET_TYPES[asset_type]
 
     for timeframe_key, config in TIMEFRAMES.items():
@@ -66,24 +65,22 @@ def update_rolling_windows(symbol, asset_type, data_all, data_new=None):
 
         window_size = config['window']
         folder_path = os.path.join(asset_folder, timeframe_key)
-        file_window = os.path.join(folder_path, f"{symbol}.csv")
+        file_window = os.path.join(folder_path, f"{symbol}.parquet")
 
         if data_new is not None and not data_new.empty and os.path.exists(file_window):
             # Incremental update: append new data and trim to window size
-            existing_window = pd.read_csv(file_window, index_col=0, parse_dates=True)
+            existing_window = pd.read_parquet(file_window)
             updated_window = pd.concat([existing_window, data_new])
             updated_window = updated_window.tail(window_size)
-            updated_window.to_csv(file_window)
+            save_both(updated_window, file_window)
         else:
             # Create new window file from all data
             data_window = data_all.tail(window_size)
-            data_window.to_csv(file_window)
-
+            save_both(data_window, file_window)
 
 def process_symbol(symbol, asset_type, symbols_count, current_index):
-
     asset_folder = ASSET_TYPES[asset_type]
-    file_all = os.path.join(asset_folder, 'alltime', f"{symbol}.csv")
+    file_all = os.path.join(asset_folder, 'alltime', f"{symbol}.parquet")
 
     try:
         print(f"[{current_index + 1}/{symbols_count}] Processing {symbol}...", end=" ")
@@ -94,7 +91,7 @@ def process_symbol(symbol, asset_type, symbols_count, current_index):
         # Check if we have existing data
         if os.path.exists(file_all):
             # Load existing all-time data
-            existing_data = pd.read_csv(file_all, index_col=0, parse_dates=True)
+            existing_data = pd.read_parquet(file_all)
             last_date = existing_data.index[-1]
 
             # Download only new data since last date
@@ -102,11 +99,15 @@ def process_symbol(symbol, asset_type, symbols_count, current_index):
 
             if data_new.empty or len(data_new) <= 1:
                 # No new data available
-                print("✓ No new data")
+                print("No new data")
                 return True
 
             # Remove overlapping date and append new data
             data_new = data_new.iloc[1:]
+
+            if isinstance(data_new.columns, pd.MultiIndex):
+                data_new.columns = data_new.columns.get_level_values(0)
+
             data_all = pd.concat([existing_data, data_new])
             new_data_added = True
             print(f"Added {len(data_new)} rows", end=" ")
@@ -115,29 +116,31 @@ def process_symbol(symbol, asset_type, symbols_count, current_index):
             data_all = yf.download(symbol, period='max', progress=False)
 
             if data_all.empty:
-                print("✗ No data available")
+                print("No data available")
                 return False
 
             new_data_added = True
             print(f"New symbol ({len(data_all)} rows)", end=" ")
 
+        if isinstance(data_all.columns, pd.MultiIndex):
+            data_all.columns = data_all.columns.get_level_values(0)
+
         # Save all-time data
-        data_all.to_csv(file_all)
+        save_both(data_all, file_all)
 
         # Update rolling window files
         if new_data_added:
             update_rolling_windows(symbol, asset_type, data_all, data_new)
-            print("✓ Updated")
+            print("Updated")
 
         return True
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f"Error: {e}")
         return False
 
 ### Print summary of processing
 def print_summary(stock_success, stock_total, etf_success, etf_total):
-  
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
@@ -151,12 +154,10 @@ def print_summary(stock_success, stock_total, etf_success, etf_total):
         for timeframe in TIMEFRAMES.keys():
             folder_path = os.path.join(asset_folder, timeframe)
             if os.path.exists(folder_path):
-                file_count = len([f for f in os.listdir(folder_path) if f.endswith('.csv')])
+                file_count = len([f for f in os.listdir(folder_path) if f.endswith('.parquet')])
                 print(f"    {timeframe:10} - {file_count:5} files")
 
-
 def main():
-
     print("=" * 60)
     print("NASDAQ Stock & ETF Data Downloader")
     print("=" * 60)
